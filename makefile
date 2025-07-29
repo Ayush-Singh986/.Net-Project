@@ -1,6 +1,6 @@
 # Image configuration
 IMAGE_REG ?= docker.io
-IMAGE_REPO ?= writetoritika/dotnet-monitoring
+IMAGE_REPO ?= ayush244/dotnet-monitoring
 IMAGE_TAG ?= latest
 
 # Directory settings
@@ -34,7 +34,7 @@ test: ## ✅ Run unit tests
 
 test-report: ## 🧪 Run tests with report
 	rm -rf $(TEST_DIR)/TestResults
-	dotnet test $(TEST_DIR)/tests.csproj --test-adapter-path:. --logger:junit --logger:html
+	dotnet test $(TEST_DIR)/tests.csproj --logger "trx;LogFileName=test_results.trx"
 
 test-api: ## 🌐 Run integration API tests
 	cd tests && npm install newman && \
