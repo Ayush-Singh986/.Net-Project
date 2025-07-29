@@ -4,19 +4,11 @@ IMAGE_REPO ?= writetoritika/dotnet-monitoring
 IMAGE_TAG ?= latest
 IMAGE_FULL := $(IMAGE_REG)/$(IMAGE_REPO):$(IMAGE_TAG)
 
-# Azure deploy config
-AZURE_RES_GROUP ?= demoapps
-AZURE_REGION ?= northeurope
-AZURE_APP_NAME ?= dotnet-demoapp
-
-# API testing
-TEST_HOST ?= localhost:5000
-
 # Directories
 SRC_DIR := src
 TEST_DIR := tests
 
-.PHONY: help lint lint-fix image push run deploy undeploy test test-report test-api clean .EXPORT_ALL_VARIABLES
+.PHONY: help lint lint-fix image push run test test-report test-api clean .EXPORT_ALL_VARIABLES
 .DEFAULT_GOAL := help
 
 help: ## 💬 Show help message
@@ -33,7 +25,7 @@ image: ## 🔨 Build container image
 push: ## 🚀 Push image to DockerHub
 	@echo "🚀 Pushing image: $(IMAGE_FULL)"
 	@if ! docker image inspect $(IMAGE_FULL) > /dev/null 2>&1; then \
-		echo "❌ Image $(IMAGE_FULL) not found. Run 'make image' first."; \
+		echo "❌ Image not found: $(IMAGE_FULL). Run 'make image' first."; \
 		exit 1; \
 	fi
 	docker push $(IMAGE_FULL)
@@ -41,28 +33,12 @@ push: ## 🚀 Push image to DockerHub
 run: ## 🏃 Run locally
 	dotnet watch --project $(SRC_DIR)/dotnet-demoapp.csproj
 
-deploy: ## 🚀 Deploy to Azure Container App
-	az group create --resource-group $(AZURE_RES_GROUP) --location $(AZURE_REGION) -o table
-	az deployment group create --template-file deploy/container-app.bicep \
-		--resource-group $(AZURE_RES_GROUP) \
-		--parameters appName=$(AZURE_APP_NAME) \
-		--parameters image=$(IMAGE_FULL) -o table
-	@sleep 2
-	@echo "✅ App deployed: $$(az deployment group show --resource-group $(AZURE_RES_GROUP) --name container-app --query 'properties.outputs.appURL.value' -o tsv)/"
-
-undeploy: ## 🧨 Delete Azure group
-	@echo "⚠️ Deleting group: $(AZURE_RES_GROUP)"
-	az group delete --name $(AZURE_RES_GROUP) --yes --no-wait -o table
-
 test: ## ✅ Run unit tests
 	dotnet test $(TEST_DIR)/tests.csproj
 
 test-report: ## 📄 Unit tests with reports
 	rm -rf $(TEST_DIR)/TestResults
 	dotnet test $(TEST_DIR)/tests.csproj --test-adapter-path:. --logger:junit --logger:html
-
-test-api: .EXPORT_ALL_VARIABLES ## 🔬 Run API tests with Newman
-	cd $(TEST_DIR) && npm install newman && ./node_modules/.bin/newman run ./postman_collection.json --env-var apphost=$(TEST_HOST)
 
 clean: ## 🧹 Clean everything
 	rm -rf $(TEST_DIR)/node_modules \
