@@ -32,9 +32,10 @@ run: ## 🏃 Run locally with dotnet CLI
 test: ## ✅ Run unit tests
 	dotnet test $(TEST_DIR)/tests.csproj
 
-test-report: ## 🧪 Run tests with report
+test-report: ## 🧪 Run tests with report (Jenkins-compatible)
 	rm -rf $(TEST_DIR)/TestResults
 	dotnet test $(TEST_DIR)/tests.csproj --logger "trx;LogFileName=test_results.trx"
+	trx2junit $(TEST_DIR)/TestResults/test_results.trx
 
 test-api: ## 🌐 Run integration API tests
 	cd tests && npm install newman && \
